@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>YZ Asistan - Gökhan</title>
+  <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIllaIEFzaXN0YW7EsSAtIEfDtmtoYW4iLAogICJzaG9ydF9uYW1lIjogIllaIEFzaXN0YW4iLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzBmMGMyOSIsCiAgInRoZW1lX2NvbG9yIjogIiMwZjBjMjkiLAogICJvcmllbnRhdGlvbiI6ICJwb3J0cmFpdCIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogImRhdGE6aW1hZ2Uvc3ZnK3htbCwlM0NzdmcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyB2aWV3Qm94PScwIDAgMTkyIDE5MiclM0UlM0NyZWN0IGZpbGw9JyUyMzAwZDJmZicgd2lkdGg9JzE5MicgaGVpZ2h0PScxOTInIHJ4PScyNCcvJTNFJTNDdGV4dCB4PSc5NicgeT0nMTIwJyBmb250LXNpemU9JzEwMCcgdGV4dC1hbmNob3I9J21pZGRsZScgZmlsbD0nd2hpdGUnJTNF8J+kliUzQy90ZXh0JTNFJTNDL3N2ZyUzRSIsCiAgICAgICJzaXplcyI6ICIxOTJ4MTkyIiwKICAgICAgInR5cGUiOiAiaW1hZ2Uvc3ZnK3htbCIKICAgIH0KICBdCn0K">
+  <meta name="theme-color" content="#0f0c29">
+<style>
+  :root {
+    --bg1: #0f0c29; --bg2: #302b63; --bg3: #24243e;
+    --accent: #00d2ff; --accent2: #3a7bd5;
+    --text: #e0e0e0; --card: rgba(255,255,255,0.07);
+    --user: #00d2ff; --bot: rgba(255,255,255,0.1);
+    --radius: 18px; --font: 'Segoe UI', system-ui, sans-serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body {
+    font-family: var(--font); background: linear-gradient(135deg, var(--bg1), var(--bg2), var(--bg3));
+    color: var(--text); height: 100vh; display:flex; flex-direction:column; overflow:hidden;
+  }
+  /* Üst Sekmeler */
+  .tabs {
+    display:flex; background:rgba(0,0,0,0.25); backdrop-filter:blur(12px);
+    border-bottom:1px solid rgba(255,255,255,0.08);
+  }
+  .tab {
+    flex:1; padding:14px 4px; text-align:center; font-size:13px; font-weight:600;
+    color:rgba(255,255,255,0.5); cursor:pointer; transition:0.3s; border-bottom:3px solid transparent;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .tab.active { color:var(--accent); border-bottom-color:var(--accent); background:rgba(0,210,255,0.05); }
+  .tab:active { opacity:0.7; }
+
+  /* Panel Konteyner */
+  .panels { flex:1; overflow:hidden; position:relative; }
+  .panel {
+    position:absolute; inset:0; overflow-y:auto; padding:15px; display:none;
+    -webkit-overflow-scrolling:touch;
+  }
+  .panel.active { display:flex; flex-direction:column; }
+
+  /* CHAT PANEL */
+  #chatPanel { padding-bottom:90px; }
+  .msg {
+    max-width:85%; padding:12px 16px; border-radius:var(--radius); margin-bottom:10px;
+    font-size:15px; line-height:1.45; word-wrap:break-word; animation:pop 0.35s ease;
+  }
+  @keyframes pop { from{opacity:0; transform:translateY(12px) scale(0.96);} to{opacity:1; transform:none;} }
+  .msg.user { align-self:flex-end; background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; border-bottom-right-radius:4px; }
+  .msg.bot { align-self:flex-start; background:var(--bot); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.08); border-bottom-left-radius:4px; }
+  .msg .time { font-size:10px; opacity:0.6; margin-top:6px; display:block; }
+  .typing { display:flex; gap:4px; padding:14px 18px; }
+  .typing span { width:7px; height:7px; background:var(--accent); border-radius:50%; animation:bounce 1.4s infinite; }
+  .typing span:nth-child(2){animation-delay:0.2s} .typing span:nth-child(3){animation-delay:0.4s}
+  @keyframes bounce{0%,80%,100%{transform:scale(0.6)}40%{transform:scale(1)}}
+
+  .inputBar {
+    position:fixed; bottom:0; left:0; right:0; padding:10px 12px 18px;
+    background:rgba(15,12,41,0.85); backdrop-filter:blur(16px);
+    border-top:1px solid rgba(255,255,255,0.08); display:flex; gap:10px; z-index:50;
+  }
+  .inputBar input {
+    flex:1; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12);
+    border-radius:24px; padding:12px 18px; color:#fff; font-size:15px; outline:none;
+  }
+  .inputBar input::placeholder { color:rgba(255,255,255,0.35); }
+  .inputBar input:focus { border-color:var(--accent); }
+  .inputBar button {
+    width:46px; height:46px; border-radius:50%; border:none;
+    background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff;
+    font-size:18px; display:flex; align-items:center; justify-content:center; cursor:pointer;
+    box-shadow:0 4px 15px rgba(0,210,255,0.3);
+  }
+  .inputBar button:active { transform:scale(0.92); }
+
+  /* HAFIZA PANEL */
+  .memCard {
+    background:var(--card); border:1px solid rgba(255,255,255,0.08);
+    border-radius:14px; padding:14px; margin-bottom:10px;
+  }
+  .memCard .q { font-weight:700; color:var(--accent); font-size:14px; margin-bottom:4px; }
+  .memCard .a { font-size:14px; opacity:0.9; }
+  .memCard .meta { font-size:11px; opacity:0.5; margin-top:8px; display:flex; justify-content:space-between; }
+  .btnRow { display:flex; gap:8px; margin-top:10px; }
+  .btnSmall {
+    flex:1; padding:8px; border-radius:10px; border:none; font-size:12px; font-weight:600;
+    cursor:pointer; background:rgba(255,255,255,0.1); color:#fff; transition:0.2s;
+  }
+  .btnSmall.del { background:rgba(255,80,80,0.2); color:#ff8080; }
+  .btnSmall:active { transform:scale(0.96); }
+  .emptyState { text-align:center; padding:40px 20px; opacity:0.4; font-size:14px; }
+
+  /* DEVELOPER PANEL */
+  .devSection { background:var(--card); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:16px; margin-bottom:14px; }
+  .devTitle { font-size:13px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:1px; margin-bottom:12px; }
+  .devLabel { font-size:12px; opacity:0.7; margin-bottom:6px; display:block; }
+  .devInput, .devTextarea, .devSelect {
+    width:100%; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.12);
+    border-radius:10px; padding:10px 12px; color:#fff; font-size:14px; margin-bottom:10px; outline:none;
+    font-family:var(--font);
+  }
+  .devTextarea { min-height:80px; resize:vertical; font-family:monospace; font-size:12px; }
+  .devBtn {
+    width:100%; padding:12px; border-radius:10px; border:none; background:linear-gradient(90deg,var(--accent),var(--accent2));
+    color:#fff; font-weight:700; font-size:14px; cursor:pointer; margin-top:4px;
+  }
+  .devBtn:active { opacity:0.8; }
+  .devBtn.secondary { background:rgba(255,255,255,0.1); }
+  .codePreview {
+    background:#0d0d1a; border:1px solid rgba(255,255,255,0.08); border-radius:10px;
+    padding:12px; font-family:monospace; font-size:11px; overflow-x:auto; white-space:pre-wrap;
+    color:#a0ffa0; max-height:200px; overflow-y:auto;
+  }
+  .badge {
+    display:inline-block; padding:3px 8px; border-radius:6px; background:rgba(0,210,255,0.15);
+    color:var(--accent); font-size:11px; font-weight:700; margin-bottom:8px;
+  }
+  .toggleRow { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .toggleSwitch {
+    width:44px; height:24px; background:rgba(255,255,255,0.15); border-radius:12px; position:relative; cursor:pointer; transition:0.3s;
+  }
+  .toggleSwitch::after {
+    content:''; position:absolute; top:2px; left:2px; width:20px; height:20px; background:#fff; border-radius:50%; transition:0.3s;
+  }
+  .toggleSwitch.on { background:var(--accent); }
+  .toggleSwitch.on::after { left:22px; }
+</style>
+</head>
+<body>
+
+<!-- SEKMELER -->
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('chat')">💬 Chat</div>
+  <div class="tab" onclick="switchTab('memory')">🧠 Hafıza</div>
+  <div class="tab" onclick="switchTab('dev')">⚙️ Developer</div>
+</div>
+
+<!-- PANEL ALANI -->
+<div class="panels">
+
+  <!-- CHAT -->
+  <div id="chatPanel" class="panel active"></div>
+
+  <!-- HAFIZA -->
+  <div id="memoryPanel" class="panel">
+    <div class="devSection">
+      <div class="devTitle">🗂️ Öğrenilmiş Bilgiler</div>
+      <div class="badge" id="memCount">0 kayıt</div>
+      <div id="memoryList"></div>
+    </div>
+    <div class="devSection">
+      <div class="devTitle">🧹 Toplu İşlemler</div>
+      <button class="devBtn secondary" onclick="exportMemory()">📤 Hafızayı Dışa Aktar (JSON)</button>
+      <button class="devBtn secondary" onclick="document.getElementById('importFile').click()" style="margin-top:8px">📥 JSON İçe Aktar</button>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importMemory(this)">
+      <button class="devBtn del" onclick="clearMemory()" style="margin-top:8px; background:rgba(255,80,80,0.3)">🗑️ Tüm Hafızayı Sil</button>
+    </div>
+  </div>
+
+  <!-- DEVELOPER -->
+  <div id="devPanel" class="panel">
+    <!-- Yeni Kural -->
+    <div class="devSection">
+      <div class="devTitle">➕ Yeni Kural Ekle</div>
+      <label class="devLabel">YZ hangi kelimeyi/cümleyi duyunca cevap versin?</label>
+      <input type="text" class="devInput" id="ruleTrigger" placeholder="örn: merhaba, saat kaç, python nedir">
+      <label class="devLabel">Cevap nedir? (fonksiyon da olabilir)</label>
+      <textarea class="devTextarea" id="ruleResponse" placeholder="örn: Merhaba Gökhan! veya ()=>new Date().toLocaleTimeString('tr-TR')"></textarea>
+      <button class="devBtn" onclick="addRule()">Kuralı Kaydet</button>
+    </div>
+
+    <!-- Görünüm Editörü -->
+    <div class="devSection">
+      <div class="devTitle">🎨 Görünüm Düzenle</div>
+      <label class="devLabel">Ana Renk</label>
+      <input type="color" class="devInput" id="colorAccent" value="#00d2ff" style="height:40px; padding:4px;">
+      <label class="devLabel">Arka Plan Tonu</label>
+      <select class="devSelect" id="bgTheme">
+        <option value="dark">🌌 Gece (Mavi-Mor)</option>
+        <option value="green">🌲 Orman (Yeşil-Siyah)</option>
+        <option value="red">🔥 Ateş (Kırmızı-Siyah)</option>
+        <option value="pink">🌸 Pembe (Pembe-Mor)</option>
+      </select>
+      <button class="devBtn" onclick="applyTheme()">Temayı Uygula</button>
+      <button class="devBtn secondary" onclick="resetTheme()" style="margin-top:6px">Varsayılana Sıfırla</button>
+    </div>
+
+    <!-- Davranış Ayarları -->
+    <div class="devSection">
+      <div class="devTitle">⚡ Davranış Ayarları</div>
+      <div class="toggleRow">
+        <span style="font-size:14px">Otomatik Öğrenme (X nedir?)</span>
+        <div class="toggleSwitch on" id="autoLearnToggle" onclick="toggleSetting('autoLearn')"></div>
+      </div>
+      <div class="toggleRow">
+        <span style="font-size:14px">Öğrenmeden Önce Sorma</span>
+        <div class="toggleSwitch" id="askBeforeToggle" onclick="toggleSetting('askBefore')"></div>
+      </div>
+      <div class="toggleRow">
+        <span style="font-size:14px">Emoji Kullan</span>
+        <div class="toggleSwitch on" id="emojiToggle" onclick="toggleSetting('useEmoji')"></div>
+      </div>
+    </div>
+
+    <!-- JSON Editör -->
+    <div class="devSection">
+      <div class="devTitle">🔧 Ham Hafıza Editörü (JSON)</div>
+      <textarea class="devTextarea" id="jsonEditor" style="min-height:150px;"></textarea>
+      <button class="devBtn" onclick="saveJson()">JSON'ı Kaydet</button>
+    </div>
+
+    <!-- Kod Önizleme -->
+    <div class="devSection">
+      <div class="devTitle">📜 Mevcut Kod (Kopyala/Düzenle)</div>
+      <div class="codePreview" id="codePreview"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CHAT INPUT -->
+<div class="inputBar" id="inputBar">
+  <input type="text" id="chatInput" placeholder="Bir şey yaz..." autocomplete="off">
+  <button onclick="handleSend()">➤</button>
+</div>
+
+<script>
+// ================== AYARLAR ==================
+const SETTINGS = {
+  autoLearn: true,
+  askBefore: false,
+  useEmoji: true,
+  name: 'Gökhan'
+};
+const SETTINGS_KEY = 'yz_settings';
+const MEMORY_KEY = 'yz_memory_v2';
+const BASE_KNOWLEDGE_KEY = 'yz_base_knowledge';
+
+function loadSettings() {
+  const s = localStorage.getItem(SETTINGS_KEY);
+  if (s) Object.assign(SETTINGS, JSON.parse(s));
+  updateToggles();
+}
+function saveSettings() {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(SETTINGS));
+}
+function toggleSetting(key) {
+  SETTINGS[key] = !SETTINGS[key];
+  saveSettings();
+  updateToggles();
+  if (key === 'useEmoji') renderMemory();
+}
+function updateToggles() {
+  document.getElementById('autoLearnToggle').classList.toggle('on', SETTINGS.autoLearn);
+  document.getElementById('askBeforeToggle').classList.toggle('on', SETTINGS.askBefore);
+  document.getElementById('emojiToggle').classList.toggle('on', SETTINGS.useEmoji);
+}
+
+// ================== BEYİN ==================
+let baseKnowledge = {
+  'merhaba': 'Merhaba {name}! Nasılsın?',
+  'selam': 'Selam! 👋',
+  'nasılsın': 'Ben bir yapay zeka olduğum için duygularım yok, ama sistemlerim %100 çalışıyor!',
+  'saat kaç': () => `Şu an saat ${new Date().toLocaleTimeString('tr-TR')}.`,
+  'tarih': () => `Bugün ${new Date().toLocaleDateString('tr-TR', {weekday:'long', year:'numeric', month:'long', day:'numeric'})}.`,
+  'adın ne': 'Benim adım yok, sadece senin yazdığın bir YZ programıyım.',
+  'sen kimsin': 'Ben senin telefonunda çalışan basit ama öğrenebilen bir yapay zekayım.',
+  'gökhan': '{name} beni yazdı ve eğitiyor! 🚀',
+  'monster': 'Monster Abra A5 V21.4 güçlü bir laptop! RTX 3050 ve i7-12700H ile oyunlar akar.',
+  'hayalet ıslığı': 'Farazi V Kayra'nın 2013 tarihli efsane albümü! "Sarıl Bana" ve "Sırtımdan Vurulduğumu Hissediyorum" klasikler.',
+  'teşekkür': 'Rica ederim, {name}! 😊',
+  'görüşürüz': 'Görüşürüz, kendine iyi bak!',
+  'bay bay': 'Bay bay! 👋',
+  'naber': 'İyidir, senden naber?',
+  'ne yapıyorsun': 'Seninle sohbet ediyorum ve yeni şeyler öğrenmeye çalışıyorum!',
+  'python nedir': 'Python, kolay okunabilir sözdizimi ile ünlü, çok amaçlı bir programlama dilidir. Yapay zeka ve veri biliminde çok kullanılır.',
+  'javascript nedir': 'JavaScript, web sayfalarını etkileşimli hale getiren bir programlama dilidir. Bu uygulama da tamamen JavaScript ile çalışıyor!',
+  'html nedir': 'HTML (HyperText Markup Language), web sayfalarının iskeletini oluşturan işaretleme dilidir.',
+  'css nedir': 'CSS (Cascading Style Sheets), web sayfalarının renk, font ve düzenini ayarlayan stil dilidir.',
+  'yapay zeka nedir': 'Yapay zeka, makinelerin insan gibi düşünmesini, öğrenmesini ve problem çözmesini sağlayan teknolojidir. Ben de basit bir örneğiyim!',
+  'help': 'Yardım menüsü:
+• Bana herhangi bir şey sorabilirsin
+• Bilmediğim şeyi sana sorarım, sen öğretirsin
+• "X nedir" diye sorarak tanım ekleyebilirsin
+• Developer sekmesinden kurallar ve renkleri düzenleyebilirsin',
+  'yardım': 'Yardım menüsü:
+• Bana herhangi bir şey sorabilirsin
+• Bilmediğim şeyi sana sorarım, sen öğretirsin
+• "X nedir" diye sorarak tanım ekleyebilirsin
+• Developer sekmesinden kurallar ve renkleri düzenleyebilirsin',
+};
+
+// Kaydedilmiş temel bilgileri yükle
+const savedBase = localStorage.getItem(BASE_KNOWLEDGE_KEY);
+if (savedBase) {
+  try {
+    const parsed = JSON.parse(savedBase);
+    // Fonksiyonlar kaybolur, sadece string olanları birleştir
+    Object.assign(baseKnowledge, parsed);
+  } catch(e){}
+}
+
+// Kullanıcı hafızası
+let memory = {};
+try {
+  memory = JSON.parse(localStorage.getItem(MEMORY_KEY) || '{}');
+} catch(e) { memory = {}; }
+
+// Öğrenme kuyruğu
+let learnMode = null; // {original, trigger}
+
+// ================== CHAT MOTORU ==================
+function normalize(text) {
+  return text.toLowerCase().replace(/[?.!,;:'"]/g, '').trim();
+}
+
+function format(str) {
+  return str.replace(/{name}/g, SETTINGS.name);
+}
+
+function findAnswer(input) {
+  const n = normalize(input);
+
+  // 1. Hafıza kontrolü
+  if (memory[n]) return memory[n].answer;
+
+  // 2. Temel bilgiler (tam eşleşme)
+  if (baseKnowledge[n]) {
+    const ans = baseKnowledge[n];
+    return typeof ans === 'function' ? ans() : format(ans);
+  }
+
+  // 3. İçerme kontrolü (temel bilgilerde)
+  for (let key in baseKnowledge) {
+    if (n.includes(key)) {
+      const ans = baseKnowledge[key];
+      return typeof ans === 'function' ? ans() : format(ans);
+    }
+  }
+
+  // 4. Hafıza içerme
+  for (let key in memory) {
+    if (n.includes(key) || key.includes(n)) {
+      return memory[key].answer;
+    }
+  }
+
+  return null;
+}
+
+function detectPattern(input) {
+  const n = normalize(input);
+  // "X nedir" kalıbı
+  const nedir = /(.+) nedir$/.exec(n);
+  if (nedir) return {type:'define', subject:nedir[1].trim()};
+  // "X demek Y demek" / "X Y demektir"
+  const demek = /(.+) demek (.+) demek/.exec(n);
+  if (demek) return {type:'learn', trigger:demek[1].trim(), answer:demek[2].trim()};
+  const demektir = /(.+) (.+) demektir/.exec(n);
+  if (demektir) return {type:'learn', trigger:demektir[1].trim(), answer:demektir[2].trim()};
+  return null;
+}
+
+function botSay(text, delay=600) {
+  showTyping();
+  setTimeout(() => {
+    hideTyping();
+    addMessage(text, 'bot');
+    saveChatScroll();
+  }, delay);
+}
+
+function addMessage(text, who) {
+  const box = document.getElementById('chatPanel');
+  const div = document.createElement('div');
+  div.className = `msg ${who}`;
+  const time = new Date().toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
+  div.innerHTML = escapeHtml(text).replace(/\n/g, '<br>') + `<span class="time">${time}</span>`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+function escapeHtml(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function showTyping() {
+  const box = document.getElementById('chatPanel');
+  if (document.getElementById('typing')) return;
+  const d = document.createElement('div');
+  d.id = 'typing'; d.className = 'msg bot typing';
+  d.innerHTML = '<span></span><span></span><span></span>';
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+}
+function hideTyping() {
+  const t = document.getElementById('typing');
+  if (t) t.remove();
+}
+
+function saveChatScroll() {
+  const box = document.getElementById('chatPanel');
+  localStorage.setItem('yz_scroll', box.scrollTop);
+}
+
+// ================== ÖĞRENME SİSTEMİ ==================
+function handleSend() {
+  const inp = document.getElementById('chatInput');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+
+  addMessage(text, 'user');
+
+  // Öğrenme modu aktif mi?
+  if (learnMode) {
+    if (text.toLowerCase() === 'hayır' || text.toLowerCase() === 'iptal') {
+      learnMode = null;
+      botSay('Tamam, öğrenmeyi iptal ettim. Başka bir soru sorabilirsin.');
+      return;
+    }
+    // Cevabı kaydet
+    const key = normalize(learnMode.trigger);
+    memory[key] = {
+      answer: text,
+      learnedAt: new Date().toISOString(),
+      source: 'user'
+    };
+    localStorage.setItem(MEMORY_KEY, JSON.stringify(memory));
+    botSay(`Tamam, "${learnMode.original}" sorusunu öğrendim! Artık biliyorum. 🧠`);
+    learnMode = null;
+    renderMemory();
+    return;
+  }
+
+  // Önce kalıp kontrolü
+  const pattern = detectPattern(text);
+  if (pattern && pattern.type === 'learn') {
+    memory[normalize(pattern.trigger)] = {
+      answer: pattern.answer,
+      learnedAt: new Date().toISOString(),
+      source: 'pattern'
+    };
+    localStorage.setItem(MEMORY_KEY, JSON.stringify(memory));
+    botSay(`Anladım! "${pattern.trigger}" demek "${pattern.answer}" demekmiş. Kaydettim. ✅`);
+    renderMemory();
+    return;
+  }
+
+  // Cevap ara
+  const ans = findAnswer(text);
+  if (ans) {
+    botSay(ans);
+    return;
+  }
+
+  // Otomatik öğrenme: "X nedir" kalıbı
+  if (pattern && pattern.type === 'define' && SETTINGS.autoLearn) {
+    learnMode = {original: text, trigger: pattern.subject};
+    if (SETTINGS.askBefore) {
+      botSay(`"${pattern.subject}" hakkında bir şey bilmiyorum. Bana öğretmek ister misin? (Cevabını yaz veya "hayır" de)`);
+    } else {
+      botSay(`"${pattern.subject}" nedir? Bana kısaca anlat, hafızama kaydedeyim.`);
+    }
+    return;
+  }
+
+  // Bilinmiyor -> öğrenme modu
+  learnMode = {original: text, trigger: text};
+  if (SETTINGS.askBefore) {
+    botSay(`Bunu bilmiyorum. Bana öğretmek ister misin? (Cevabını yaz veya "hayır" de)`);
+  } else {
+    botSay(`Bunu bilmiyorum. Ne cevap vermem gerektiğini söyler misin?`);
+  }
+}
+
+// ================== SEKME YÖNETİMİ ==================
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById(name + 'Panel').classList.add('active');
+
+  if (name === 'memory') renderMemory();
+  if (name === 'dev') renderDev();
+}
+
+// ================== HAFIZA PANELİ ==================
+function renderMemory() {
+  const list = document.getElementById('memoryList');
+  const keys = Object.keys(memory);
+  document.getElementById('memCount').textContent = keys.length + ' kayıt';
+
+  if (keys.length === 0) {
+    list.innerHTML = '<div class="emptyState">Henüz bir şey öğrenmedim.<br>Chat sekmesinde bana sorular sor!</div>';
+    return;
+  }
+
+  list.innerHTML = keys.map(k => {
+    const item = memory[k];
+    const date = new Date(item.learnedAt).toLocaleDateString('tr-TR');
+    const emoji = item.source === 'pattern' ? '🔍' : (SETTINGS.useEmoji ? '👤' : '');
+    return `
+      <div class="memCard">
+        <div class="q">${emoji} ${escapeHtml(k)}</div>
+        <div class="a">${escapeHtml(item.answer)}</div>
+        <div class="meta">
+          <span>${date}</span>
+          <span>${item.source === 'pattern' ? 'Otomatik' : 'Sen öğrettin'}</span>
+        </div>
+        <div class="btnRow">
+          <button class="btnSmall" onclick="editMemory('${k.replace(/'/g, "\'")}')">✏️ Düzenle</button>
+          <button class="btnSmall del" onclick="deleteMemory('${k.replace(/'/g, "\'")}')">🗑️ Sil</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function deleteMemory(key) {
+  if (!confirm('Bu kaydı silmek istediğine emin misin?')) return;
+  delete memory[key];
+  localStorage.setItem(MEMORY_KEY, JSON.stringify(memory));
+  renderMemory();
+}
+
+function editMemory(key) {
+  const item = memory[key];
+  const newAns = prompt(`"${key}" için yeni cevap:`, item.answer);
+  if (newAns === null) return;
+  if (newAns.trim() === '') { deleteMemory(key); return; }
+  memory[key].answer = newAns.trim();
+  localStorage.setItem(MEMORY_KEY, JSON.stringify(memory));
+  renderMemory();
+}
+
+function clearMemory() {
+  if (!confirm('Tüm öğrenilmiş bilgileri silmek istediğine emin misin? Bu işlem geri alınamaz!')) return;
+  memory = {};
+  localStorage.removeItem(MEMORY_KEY);
+  renderMemory();
+}
+
+function exportMemory() {
+  const data = {
+    exportDate: new Date().toISOString(),
+    memory: memory,
+    settings: SETTINGS,
+    baseKnowledge: Object.fromEntries(
+      Object.entries(baseKnowledge).filter(([k,v]) => typeof v === 'string')
+    )
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `yz_backup_${Date.now()}.json`; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importMemory(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.memory) {
+        memory = {...memory, ...data.memory};
+        localStorage.setItem(MEMORY_KEY, JSON.stringify(memory));
+      }
+      if (data.settings) {
+        Object.assign(SETTINGS, data.settings);
+        saveSettings();
+        updateToggles();
+      }
+      if (data.baseKnowledge) {
+        Object.assign(baseKnowledge, data.baseKnowledge);
+        localStorage.setItem(BASE_KNOWLEDGE_KEY, JSON.stringify(
+          Object.fromEntries(Object.entries(baseKnowledge).filter(([k,v]) => typeof v === 'string'))
+        ));
+      }
+      alert('Yedek başarıyla yüklendi!');
+      renderMemory();
+    } catch(err) {
+      alert('Dosya okunamadı: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+// ================== DEVELOPER PANELİ ==================
+function renderDev() {
+  // JSON editörü güncelle
+  document.getElementById('jsonEditor').value = JSON.stringify(memory, null, 2);
+  // Kod önizleme
+  const code = document.documentElement.outerHTML;
+  document.getElementById('codePreview').textContent = code.substring(0, 3000) + '\n... (kod devam ediyor, tarayıcıda Ctrl+S ile kaydedebilirsin)';
+}
+
+function addRule() {
+  const trig = document.getElementById('ruleTrigger').value.trim().toLowerCase();
+  const resp = document.getElementById('ruleResponse').value.trim();
+  if (!trig || !resp) { alert('Her iki alanı da doldurmalısın!'); return; }
+
+  baseKnowledge[trig] = resp;
+  // Fonksiyon olup olmadığını kontrol et
+  if (resp.startsWith('()=>') || resp.startsWith('function')) {
+    // Güvenlik nedeniyle string olarak kalacak, runtime'da eval edilebilir ama şimdilik string kaydet
+    alert('Fonksiyon desteği sınırlıdır. Basit metin cevapları önerilir.');
+  }
+
+  // String olanları kaydet
+  const savable = Object.fromEntries(
+    Object.entries(baseKnowledge).filter(([k,v]) => typeof v === 'string')
+  );
+  localStorage.setItem(BASE_KNOWLEDGE_KEY, JSON.stringify(savable));
+
+  document.getElementById('ruleTrigger').value = '';
+  document.getElementById('ruleResponse').value = '';
+  alert(`"${trig}" kuralı eklendi!`);
+}
+
+function saveJson() {
+  try {
+    const parsed = JSON.parse(document.getElementById('jsonEditor').value);
+    memory = parsed;
+    localStorage.setItem(MEMORY_KEY, JSON.stringify(memory));
+    alert('Hafıza başarıyla güncellendi!');
+    renderMemory();
+  } catch(e) {
+    alert('JSON hatalı: ' + e.message);
+  }
+}
+
+const themes = {
+  dark:  {bg1:'#0f0c29', bg2:'#302b63', bg3:'#24243e', accent:'#00d2ff'},
+  green: {bg1:'#0a1f0a', bg2:'#1a3c1a', bg3:'#0f2e0f', accent:'#00ff88'},
+  red:   {bg1:'#1f0a0a', bg2:'#3c1a1a', bg3:'#2e0f0f', accent:'#ff4444'},
+  pink:  {bg1:'#1f0a1a', bg2:'#3c1a32', bg3:'#2e0f26', accent:'#ff66b2'},
+};
+
+function applyTheme() {
+  const t = document.getElementById('bgTheme').value;
+  const color = document.getElementById('colorAccent').value;
+  const th = themes[t];
+  const r = document.documentElement;
+  r.style.setProperty('--bg1', th.bg1);
+  r.style.setProperty('--bg2', th.bg2);
+  r.style.setProperty('--bg3', th.bg3);
+  r.style.setProperty('--accent', color);
+  r.style.setProperty('--user', color);
+  localStorage.setItem('yz_theme', JSON.stringify({theme:t, accent:color}));
+}
+
+function resetTheme() {
+  const r = document.documentElement;
+  r.style.setProperty('--bg1', '#0f0c29');
+  r.style.setProperty('--bg2', '#302b63');
+  r.style.setProperty('--bg3', '#24243e');
+  r.style.setProperty('--accent', '#00d2ff');
+  r.style.setProperty('--user', '#00d2ff');
+  document.getElementById('colorAccent').value = '#00d2ff';
+  document.getElementById('bgTheme').value = 'dark';
+  localStorage.removeItem('yz_theme');
+}
+
+function loadTheme() {
+  const t = localStorage.getItem('yz_theme');
+  if (!t) return;
+  try {
+    const {theme, accent} = JSON.parse(t);
+    document.getElementById('bgTheme').value = theme;
+    document.getElementById('colorAccent').value = accent;
+    applyTheme();
+  } catch(e){}
+}
+
+// ================== BAŞLANGIÇ ==================
+document.getElementById('chatInput').addEventListener('keypress', e => {
+  if (e.key === 'Enter') handleSend();
+});
+
+loadSettings();
+loadTheme();
+
+// İlk mesaj
+setTimeout(() => {
+  botSay(`Merhaba ${SETTINGS.name}! Ben senin yazdığın YZ.\n\nBana sorular sor, bilmediğimi söylersem sen öğretirsin. "X nedir" diye sorarak tanım da ekleyebilirsin. 🎓\n\nDeveloper sekmesinden beni düzenleyebilirsin!`, 400);
+}, 100);
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  const swCode = `const CACHE_NAME = 'yz-asistani-v1';
+const urlsToCache = ['.'];
+
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(urlsToCache))
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    caches.match(event.request)
+      .then(response => response || fetch(event.request))
+  );
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil(self.clients.claim());
+});
+`;
+  const swBlob = new Blob([swCode], {type: 'application/javascript'});
+  const swUrl = URL.createObjectURL(swBlob);
+  navigator.serviceWorker.register(swUrl).catch(err => console.log('SW error:', err));
+}
+</script>
+</body>
+</html>
